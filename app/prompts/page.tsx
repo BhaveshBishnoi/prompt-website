@@ -1,15 +1,14 @@
 "use client";
 
-import { Container, Typography } from "@mui/material";
 import PromptGrid from "../../components/prompts/PromptGrid";
 
 export default function PromptsPage() {
   return (
-    <Container sx={{ py: 6 }}>
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 3 }}>Marketplace</Typography>
+    <div style={{ paddingTop: 24, paddingBottom: 24 }}>
+      <p style={{ fontWeight: 700, marginBottom: 24, fontSize: "1.5rem" }}>
+        Marketplace
+      </p>
       <PromptGrid />
-    </Container>
+    </div>
   );
 }
-
-
