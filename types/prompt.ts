@@ -1,0 +1,34 @@
+export interface Prompt {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  content: string;
+  previewContent: string;
+  author: string;
+  authorId: string;
+  rating: number;
+  downloads: number;
+  views: number;
+  price: number;
+  isFree: boolean;
+  tags: string[];
+  verified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  aiModel: string;
+  language: string;
+  difficulty: string;
+  timeToComplete: string;
+  featured: boolean;
+  premium: boolean;
+  status?: "draft" | "published" | "archived";
+  reviews?: number;
+  revenue?: number;
+  salesCount?: number;
+  thumbnail?: string;
+  images?: string[];
+  demoUrl?: string;
+  categorySlug?: string;
+  slug?: string;
+}

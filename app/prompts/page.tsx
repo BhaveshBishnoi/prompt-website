@@ -1,442 +1,688 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useMemo, useState, useEffect } from "react";
 import {
-  Search,
+  Search as SearchIcon,
   Filter,
+  Grid3x3,
+  List,
+  TrendingUp,
   Star,
   Download,
-  Copy,
-  Check,
-  TrendingUp,
-  Code,
-  Briefcase,
-  PenTool,
-  MessageSquare,
-  Mail,
-  Zap,
+  Sparkles,
+  Crown,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import PromptStats from "@/components/prompt/PromptStats";
+import type { Prompt } from "@/types/prompt";
 import { toast } from "sonner";
+import PromptCard from "@/components/prompt/promptCard";
 
-const PromptsPage = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedType, setSelectedType] = useState("all");
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+// Sample categories from your Prisma schema
+const categories = [
+  { id: "all", name: "All Categories", icon: "🌐", count: 2000 },
+  { id: "marketing", name: "Marketing", icon: "📈", count: 450 },
+  { id: "development", name: "Development", icon: "💻", count: 380 },
+  { id: "business", name: "Business", icon: "💼", count: 320 },
+  { id: "writing", name: "Content Writing", icon: "✍️", count: 280 },
+  { id: "social", name: "Social Media", icon: "📱", count: 260 },
+  { id: "education", name: "Education", icon: "🎓", count: 210 },
+  { id: "design", name: "Design", icon: "🎨", count: 190 },
+  { id: "productivity", name: "Productivity", icon: "⚡", count: 170 },
+  { id: "finance", name: "Finance", icon: "💰", count: 140 },
+];
 
-  const categories = [
-    { id: "all", name: "All Prompts", icon: Zap, count: 10234 },
-    { id: "marketing", name: "Marketing", icon: TrendingUp, count: 2543 },
-    { id: "development", name: "Development", icon: Code, count: 1892 },
-    { id: "business", name: "Business", icon: Briefcase, count: 1456 },
-    { id: "writing", name: "Content Writing", icon: PenTool, count: 3201 },
-    { id: "social", name: "Social Media", icon: MessageSquare, count: 1543 },
-    { id: "email", name: "Email Marketing", icon: Mail, count: 987 },
-  ];
+const difficultyLevels = [
+  { id: "all", label: "All Levels" },
+  { id: "beginner", label: "Beginner" },
+  { id: "intermediate", label: "Intermediate" },
+  { id: "advanced", label: "Advanced" },
+];
 
-  const prompts = [
-    {
-      id: "1",
-      title: "SEO Meta Description Generator",
-      description:
-        "Create compelling meta descriptions that boost click-through rates and improve search rankings for any webpage or blog post.",
-      category: "marketing",
-      content:
-        "Write a compelling meta description for a [type of page] about [topic]. The description should be 150-160 characters, include the primary keyword '[keyword]', and entice users to click.",
-      author: "Sarah Johnson",
-      rating: 4.8,
-      downloads: 12543,
-      tags: ["SEO", "Marketing", "Meta Tags"],
-      verified: true,
-    },
-    {
-      id: "2",
-      title: "React Component Code Review",
-      description:
-        "Comprehensive code review assistant for React components with best practices, performance tips, and security checks.",
-      category: "development",
-      content:
-        "Review this React component and provide detailed feedback on:\n1. Code quality and best practices\n2. Performance optimization opportunities\n3. Security vulnerabilities\n4. Accessibility improvements\n5. TypeScript type safety\n\nComponent code:\n[paste your component code here]",
-      author: "Michael Chen",
-      rating: 4.9,
-      downloads: 8234,
-      tags: ["React", "Code Review", "Development"],
-      verified: true,
-    },
-    {
-      id: "3",
-      title: "Business Plan Generator",
-      description:
-        "Generate detailed business plans with market analysis, financial projections, and strategic roadmaps for any business idea.",
-      category: "business",
-      content:
-        "Create a comprehensive business plan for [business idea]. Include:\n- Executive Summary\n- Market Analysis\n- Target Audience\n- Competitive Analysis\n- Revenue Model\n- Marketing Strategy\n- Financial Projections (3 years)\n- Risk Analysis",
-      author: "David Kumar",
-      rating: 4.7,
-      downloads: 6543,
-      tags: ["Business", "Planning", "Strategy"],
-      verified: true,
-    },
-    {
-      id: "4",
-      title: "Blog Post Outline Creator",
-      description:
-        "Create detailed, SEO-optimized blog post outlines with engaging hooks, structured sections, and clear CTAs.",
-      category: "writing",
-      content:
-        "Create a detailed blog post outline for the topic: '[your topic]'\n\nInclude:\n1. Attention-grabbing headline (5 options)\n2. SEO meta description\n3. Introduction hook\n4. Main sections (H2) with subsections (H3)\n5. Key points for each section\n6. FAQ section\n7. Conclusion with CTA\n8. Target keyword suggestions",
-      author: "Emily Rodriguez",
-      rating: 4.6,
-      downloads: 9876,
-      tags: ["Blogging", "Content", "SEO"],
-      verified: false,
-    },
-    {
-      id: "5",
-      title: "Instagram Caption Generator",
-      description:
-        "Generate engaging Instagram captions with relevant hashtags, emojis, and calls-to-action for maximum engagement.",
-      category: "social",
-      content:
-        "Generate 5 engaging Instagram captions for [describe your post/image]. Include:\n- Hook in the first line\n- Relevant emojis\n- Call-to-action\n- 20-30 relevant hashtags (mix of popular and niche)\n- Keep it authentic and on-brand for [brand/business type]",
-      author: "Alex Thompson",
-      rating: 4.8,
-      downloads: 11234,
-      tags: ["Instagram", "Social Media", "Captions"],
-      verified: true,
-    },
-    {
-      id: "6",
-      title: "Cold Email Outreach Template",
-      description:
-        "Craft personalized cold email templates that get responses. Perfect for sales, partnerships, and business development.",
-      category: "email",
-      content:
-        "Write a cold email to [target person/company] for [purpose: partnership/sales/collaboration]. Include:\n\nSubject Line: [Create 3 options]\n\nEmail Body:\n- Personalized opener\n- Value proposition (what's in it for them)\n- Social proof or credibility\n- Clear and specific ask\n- Easy next step\n- Professional signature\n\nTone: [Professional/Friendly/Direct]",
-      author: "James Wilson",
-      rating: 4.7,
-      downloads: 7654,
-      tags: ["Email", "Sales", "Outreach"],
-      verified: true,
-    },
-  ];
+const aiModels = [
+  { id: "all", label: "All Models" },
+  { id: "chatgpt-4", label: "ChatGPT-4" },
+  { id: "gpt-3.5", label: "GPT-3.5" },
+  { id: "claude-3", label: "Claude 3" },
+  { id: "gemini", label: "Gemini Pro" },
+  { id: "midjourney", label: "Midjourney" },
+  { id: "dall-e", label: "DALL-E 3" },
+];
 
-  const handleCopy = (promptId: string, content: string) => {
-    navigator.clipboard.writeText(content);
-    setCopiedId(promptId);
-    toast.success("Prompt copied to clipboard!");
-    setTimeout(() => setCopiedId(null), 2000);
+const sortOptions = [
+  { id: "popular", label: "Most Popular", icon: TrendingUp },
+  { id: "newest", label: "Newest", icon: Sparkles },
+  { id: "rating", label: "Highest Rated", icon: Star },
+  { id: "downloads", label: "Most Downloads", icon: Download },
+  { id: "featured", label: "Featured", icon: Crown },
+];
+
+export default function PromptsPage() {
+  const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [priceRange, setPriceRange] = useState([0, 50]);
+  const [rating, setRating] = useState(0);
+  const [difficulty, setDifficulty] = useState("all");
+  const [aiModel, setAiModel] = useState("all");
+  const [showFreeOnly, setShowFreeOnly] = useState(false);
+  const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
+  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState("popular");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  // Load prompts from JSON
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadPrompts = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch from public directory
+        const response = await fetch("/data/prompts.json", {
+          cache: "no-store", // Ensure fresh data
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to load prompts: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+
+        // Validate the data structure
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid data format: expected an array");
+        }
+
+        // Transform data to ensure it matches Prompt type
+        const validatedPrompts = data.map((prompt: Prompt) => ({
+          id: prompt.id || `prompt-${Math.random()}`,
+          title: prompt.title || "Untitled Prompt",
+          description: prompt.description || "",
+          category: prompt.category || "uncategorized",
+          content: prompt.content || "",
+          previewContent:
+            prompt.previewContent ||
+            prompt.content?.substring(0, 200) + "..." ||
+            "",
+          author: prompt.author || "Unknown Author",
+          authorId: prompt.authorId || "unknown",
+          rating: typeof prompt.rating === "number" ? prompt.rating : 4.0,
+          downloads:
+            typeof prompt.downloads === "number" ? prompt.downloads : 0,
+          views: typeof prompt.views === "number" ? prompt.views : 0,
+          price: typeof prompt.price === "number" ? prompt.price : 0,
+          isFree:
+            typeof prompt.isFree === "boolean"
+              ? prompt.isFree
+              : prompt.price === 0,
+          tags: Array.isArray(prompt.tags) ? prompt.tags : [],
+          verified:
+            typeof prompt.verified === "boolean" ? prompt.verified : false,
+          createdAt: prompt.createdAt || new Date().toISOString(),
+          updatedAt: prompt.updatedAt || new Date().toISOString(),
+          aiModel: prompt.aiModel || "ChatGPT-4",
+          language: prompt.language || "English",
+          difficulty: prompt.difficulty || "Beginner",
+          timeToComplete: prompt.timeToComplete || "5 minutes",
+          featured:
+            typeof prompt.featured === "boolean" ? prompt.featured : false,
+          premium: typeof prompt.premium === "boolean" ? prompt.premium : false,
+          reviews: typeof prompt.reviews === "number" ? prompt.reviews : 0,
+          revenue: typeof prompt.revenue === "number" ? prompt.revenue : 0,
+          salesCount:
+            typeof prompt.salesCount === "number" ? prompt.salesCount : 0,
+          status: prompt.status || "published",
+          categorySlug:
+            prompt.categorySlug ||
+            prompt.category?.toLowerCase() ||
+            "uncategorized",
+          slug:
+            prompt.slug ||
+            prompt.title?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ||
+            "untitled",
+        }));
+
+        setPrompts(validatedPrompts);
+      } catch (err) {
+        console.error("Error loading prompts:", err);
+        setError(err instanceof Error ? err.message : "Failed to load prompts");
+        // Set empty array if loading fails
+        setPrompts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPrompts();
+  }, []);
+
+  const filteredPrompts = useMemo(() => {
+    const filtered = prompts.filter((prompt) => {
+      const matchesSearch =
+        !query ||
+        prompt.title.toLowerCase().includes(query.toLowerCase()) ||
+        prompt.description.toLowerCase().includes(query.toLowerCase()) ||
+        prompt.tags.some((tag) =>
+          tag.toLowerCase().includes(query.toLowerCase())
+        );
+
+      const matchesCategory =
+        activeCategory === "all" ||
+        prompt.category.toLowerCase() === activeCategory.toLowerCase();
+
+      const matchesPrice =
+        (showFreeOnly ? prompt.price === 0 : true) &&
+        prompt.price >= priceRange[0] &&
+        prompt.price <= priceRange[1];
+
+      const matchesRating = prompt.rating >= rating;
+      const matchesDifficulty =
+        difficulty === "all" || prompt.difficulty.toLowerCase() === difficulty;
+      const matchesAiModel =
+        aiModel === "all" || prompt.aiModel.toLowerCase() === aiModel;
+      const matchesVerified = showVerifiedOnly ? prompt.verified : true;
+      const matchesFeatured = showFeaturedOnly ? prompt.featured : true;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesPrice &&
+        matchesRating &&
+        matchesDifficulty &&
+        matchesAiModel &&
+        matchesVerified &&
+        matchesFeatured
+      );
+    });
+
+    // Sort prompts
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        case "rating":
+          return b.rating - a.rating;
+        case "downloads":
+          return b.downloads - a.downloads;
+        case "featured":
+          return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+        case "popular":
+        default:
+          return b.downloads + b.views - (a.downloads + a.views);
+      }
+    });
+
+    return filtered;
+  }, [
+    prompts,
+    query,
+    activeCategory,
+    priceRange,
+    rating,
+    difficulty,
+    aiModel,
+    showFreeOnly,
+    showVerifiedOnly,
+    showFeaturedOnly,
+    sortBy,
+  ]);
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Prompt copied to clipboard!");
+    } catch (error: unknown) {
+      toast.error("Unable to copy — please try manually", {
+        description: String(error),
+      });
+    }
   };
 
-  const filteredPrompts = prompts.filter((prompt) => {
-    const matchesSearch =
-      prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prompt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prompt.tags.some((tag) =>
-        tag.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    const matchesCategory =
-      selectedCategory === "all" || prompt.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleFavorite = () => {
+    toast.success("Added to favorites!");
+  };
 
-  const CategoryIcon =
-    categories.find((cat) => cat.id === selectedCategory)?.icon || Zap;
+  const handleShare = (promptId: string) => {
+    navigator.clipboard.writeText(
+      `${window.location.origin}/prompts/${promptId}`
+    );
+    toast.success("Link copied to clipboard!");
+  };
+
+  const clearFilters = () => {
+    setQuery("");
+    setActiveCategory("all");
+    setPriceRange([0, 50]);
+    setRating(0);
+    setDifficulty("all");
+    setAiModel("all");
+    setShowFreeOnly(false);
+    setShowVerifiedOnly(false);
+    setShowFeaturedOnly(false);
+    setSortBy("popular");
+  };
+
+  const activeFiltersCount = [
+    activeCategory !== "all",
+    priceRange[0] > 0 || priceRange[1] < 50,
+    rating > 0,
+    difficulty !== "all",
+    aiModel !== "all",
+    showFreeOnly,
+    showVerifiedOnly,
+    showFeaturedOnly,
+  ].filter(Boolean).length;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-linear-to-b from-gray-50 to-white pt-24 pb-16">
+        <div className="container mx-auto px-4">
+          <div className="animate-pulse space-y-8">
+            <div className="h-12 bg-gray-200 rounded-lg w-1/3"></div>
+            <div className="h-6 bg-gray-200 rounded-lg w-1/2"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-96 bg-gray-200 rounded-xl"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-linear-to-b from-gray-50 to-white pt-24 pb-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-20">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-red-100 flex items-center justify-center">
+              <X className="w-12 h-12 text-red-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Error Loading Prompts
+            </h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">{error}</p>
+            <p className="text-sm text-gray-500 mb-6">
+              Make sure your prompts.json file exists at:{" "}
+              <code>public/data/prompts.json</code>
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Retry Loading
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-emerald-50 pt-24 pb-12">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white pt-24 pb-16">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Browse{" "}
-            <span className="bg-linear-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+        {/* Hero Header */}
+        <div className="mb-12 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-emerald-500 to-emerald-600 text-white rounded-full mb-6">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-sm font-semibold">
+              {prompts.length} Premium Prompts
+            </span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
+            Discover{" "}
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-500 to-emerald-600">
               AI Prompts
             </span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Discover thousands of hand-crafted prompts for ChatGPT, Claude, and
-            other AI tools
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Hand-crafted prompts for developers, marketers, creators, and
+            professionals. Supercharge your AI workflow with our curated
+            collection.
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="max-w-3xl mx-auto mb-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search prompts: marketing, coding, writing..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-4 h-14 text-base bg-white shadow-lg border-2 border-gray-200 focus:border-emerald-500 rounded-xl"
-            />
-          </div>
+        {/* Stats Bar */}
+        <div className="mb-8">
+          <PromptStats prompts={prompts} />
         </div>
 
-        {/* Mobile Filter Button */}
-        <div className="lg:hidden mb-6">
-          <Button
-            onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
-            className="w-full h-12 bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-500 hover:text-emerald-600 flex items-center justify-center gap-2"
+        {/* Main Content with Filters */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filters Sidebar */}
+          <aside
+            className={`lg:w-72 ${isFiltersOpen ? "block" : "hidden lg:block"}`}
           >
-            <Filter className="w-5 h-5" />
-            Filters & Categories
-          </Button>
-        </div>
+            <div className="sticky top-24 bg-white rounded-2xl border shadow-sm p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg">Filters</h3>
+                <div className="flex items-center gap-2">
+                  {activeFiltersCount > 0 && (
+                    <Badge variant="secondary">
+                      {activeFiltersCount} active
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-8"
+                  >
+                    Clear all
+                  </Button>
+                  <button
+                    onClick={() => setIsFiltersOpen(false)}
+                    className="lg:hidden"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
 
-        <div className="flex gap-8">
-          {/* Sidebar - Desktop */}
-          <aside className="hidden lg:block w-72 shrink-0">
-            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Filter className="w-5 h-5 text-emerald-600" />
-                Categories
-              </h3>
+              {/* Search */}
               <div className="space-y-2">
-                {categories.map((category) => {
-                  const Icon = category.icon;
-                  return (
+                <Label>Search Prompts</Label>
+                <div className="relative">
+                  <SearchIcon className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search prompts..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Category Filter */}
+              <div className="space-y-3">
+                <Label>Categories</Label>
+                <div className="space-y-2">
+                  {categories.map((cat) => (
                     <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                        selectedCategory === category.id
-                          ? "bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg"
-                          : "hover:bg-gray-50 text-gray-700"
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`flex items-center justify-between w-full p-3 rounded-lg transition-all ${
+                        activeCategory === cat.id
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon className="w-5 h-5" />
-                        <span className="font-medium">{category.name}</span>
+                        <span className="text-lg">{cat.icon}</span>
+                        <span className="font-medium">{cat.name}</span>
                       </div>
-                      <span
-                        className={`text-sm ${
-                          selectedCategory === category.id
-                            ? "text-white"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {category.count}
-                      </span>
+                      <Badge variant="secondary">
+                        {prompts.filter((p) => p.category === cat.id).length}
+                      </Badge>
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="space-y-3">
+                <Label>
+                  Price Range: ${priceRange[0]} - ${priceRange[1]}
+                </Label>
+                <Slider
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  max={50}
+                  step={5}
+                  className="w-full"
+                />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="free-only"
+                    checked={showFreeOnly}
+                    onCheckedChange={(checked) =>
+                      setShowFreeOnly(checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="free-only" className="cursor-pointer">
+                    Free prompts only
+                  </Label>
+                </div>
+              </div>
+
+              {/* Rating */}
+              <div className="space-y-3">
+                <Label>Minimum Rating: {rating}+ stars</Label>
+                <Slider
+                  value={[rating]}
+                  onValueChange={([value]) => setRating(value)}
+                  max={5}
+                  step={0.5}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Difficulty */}
+              <div className="space-y-3">
+                <Label>Difficulty Level</Label>
+                <RadioGroup value={difficulty} onValueChange={setDifficulty}>
+                  {difficultyLevels.map((level) => (
+                    <div key={level.id} className="flex items-center space-x-2">
+                      <RadioGroupItem
+                        value={level.id}
+                        id={`difficulty-${level.id}`}
+                      />
+                      <Label
+                        htmlFor={`difficulty-${level.id}`}
+                        className="cursor-pointer"
+                      >
+                        {level.label}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              {/* AI Model */}
+              <div className="space-y-3">
+                <Label>AI Model</Label>
+                <Select value={aiModel} onValueChange={setAiModel}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {aiModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Additional Filters */}
+              <div className="space-y-3">
+                <Label>Additional Filters</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="verified-only"
+                      checked={showVerifiedOnly}
+                      onCheckedChange={(checked) =>
+                        setShowVerifiedOnly(checked as boolean)
+                      }
+                    />
+                    <Label htmlFor="verified-only" className="cursor-pointer">
+                      Verified prompts only
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="featured-only"
+                      checked={showFeaturedOnly}
+                      onCheckedChange={(checked) =>
+                        setShowFeaturedOnly(checked as boolean)
+                      }
+                    />
+                    <Label htmlFor="featured-only" className="cursor-pointer">
+                      Featured prompts only
+                    </Label>
+                  </div>
+                </div>
               </div>
             </div>
           </aside>
 
-          {/* Mobile Sidebar */}
-          {isMobileFilterOpen && (
-            <div
-              className="fixed inset-0 bg-black/50 z-50 lg:hidden"
-              onClick={() => setIsMobileFilterOpen(false)}
-            >
-              <div
-                className="absolute right-0 top-0 h-full w-80 bg-white shadow-2xl p-6 overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <Filter className="w-5 h-5 text-emerald-600" />
-                    Categories
-                  </h3>
-                  <button onClick={() => setIsMobileFilterOpen(false)}>
-                    <X className="w-6 h-6 text-gray-500" />
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {categories.map((category) => {
-                    const Icon = category.icon;
-                    return (
-                      <button
-                        key={category.id}
-                        onClick={() => {
-                          setSelectedCategory(category.id);
-                          setIsMobileFilterOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                          selectedCategory === category.id
-                            ? "bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg"
-                            : "hover:bg-gray-50 text-gray-700"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-5 h-5" />
-                          <span className="font-medium">{category.name}</span>
-                        </div>
-                        <span
-                          className={`text-sm ${
-                            selectedCategory === category.id
-                              ? "text-white"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          {category.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Main Content */}
-          <div className="flex-1">
-            {/* Results Header */}
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-linear-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center">
-                  <CategoryIcon className="w-6 h-6 text-white" />
+          <main className="flex-1">
+            {/* Toolbar */}
+            <div className="bg-white rounded-2xl border shadow-sm p-4 mb-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsFiltersOpen(true)}
+                    className="lg:hidden"
+                  >
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filters
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+
+                  <span className="text-gray-600">
+                    <span className="font-semibold text-gray-900">
+                      {filteredPrompts.length}
+                    </span>{" "}
+                    prompts found
+                  </span>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    {categories.find((cat) => cat.id === selectedCategory)
-                      ?.name || "All Prompts"}
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    {filteredPrompts.length} prompts found
-                  </p>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortOptions.map((option) => {
+                          const Icon = option.icon;
+                          return (
+                            <SelectItem key={option.id} value={option.id}>
+                              <div className="flex items-center gap-2">
+                                <Icon className="w-4 h-4" />
+                                {option.label}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-1 border rounded-lg p-1">
+                    <Button
+                      variant={viewMode === "grid" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("grid")}
+                      className="h-9 w-9 p-0"
+                    >
+                      <Grid3x3 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === "list" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("list")}
+                      className="h-9 w-9 p-0"
+                    >
+                      <List className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Prompts Grid */}
+            {/* Prompts Grid/List */}
             {filteredPrompts.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-12 h-12 text-gray-400" />
+              <div className="text-center py-20">
+                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                  <SearchIcon className="w-12 h-12 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   No prompts found
                 </h3>
-                <p className="text-gray-600">
-                  Try adjusting your search or filter criteria
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  Try adjusting your filters or search terms to find what
+                  you&apos;re looking for.
                 </p>
+                <Button onClick={clearFilters}>Clear all filters</Button>
               </div>
             ) : (
-              <div className="grid gap-6">
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+                    : "space-y-6"
+                }
+              >
                 {filteredPrompts.map((prompt) => (
-                  <div
+                  <PromptCard
                     key={prompt.id}
-                    className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 group"
-                  >
-                    <div className="p-6">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium capitalize">
-                              {prompt.category}
-                            </span>
-                            {prompt.verified && (
-                              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium flex items-center gap-1">
-                                <Check className="w-3 h-3" />
-                                Verified
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-emerald-600 transition-colors">
-                            {prompt.title}
-                          </h3>
-                          <p className="text-gray-600 mb-3">
-                            {prompt.description}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            By {prompt.author}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Stats */}
-                      <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="font-medium">{prompt.rating}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Download className="w-4 h-4" />
-                          <span>{prompt.downloads.toLocaleString()} uses</span>
-                        </div>
-                      </div>
-
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {prompt.tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* Prompt Content */}
-                      <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-gray-700 uppercase">
-                            Prompt Template
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              handleCopy(prompt.id, prompt.content)
-                            }
-                            className="h-8 text-xs"
-                          >
-                            {copiedId === prompt.id ? (
-                              <>
-                                <Check className="w-3 h-3 mr-1" />
-                                Copied!
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3 mr-1" />
-                                Copy
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                        <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
-                          {prompt.content}
-                        </pre>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-3">
-                        <Button
-                          onClick={() => handleCopy(prompt.id, prompt.content)}
-                          className="flex-1 bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white h-11"
-                        >
-                          {copiedId === prompt.id ? (
-                            <>
-                              <Check className="w-4 h-4 mr-2" />
-                              Copied to Clipboard
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4 mr-2" />
-                              Copy Prompt
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                    prompt={prompt}
+                    onCopy={handleCopy}
+                    onFavorite={handleFavorite}
+                    onShare={handleShare}
+                  />
                 ))}
               </div>
             )}
-          </div>
+
+            {/* Pagination */}
+            {filteredPrompts.length > 0 && (
+              <div className="flex items-center justify-center mt-12">
+                <nav className="flex items-center gap-2">
+                  <Button variant="outline" size="sm">
+                    Previous
+                  </Button>
+                  {[1, 2, 3, 4, 5].map((page) => (
+                    <Button
+                      key={page}
+                      variant={page === 1 ? "default" : "outline"}
+                      size="sm"
+                      className="w-10 h-10 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  <Button variant="outline" size="sm">
+                    Next
+                  </Button>
+                </nav>
+              </div>
+            )}
+          </main>
         </div>
       </div>
     </div>
   );
-};
-
-export default PromptsPage;
+}

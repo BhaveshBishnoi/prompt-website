@@ -1,36 +1,31 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import fs from "fs";
+import path from "path";
 
-export async function GET(req: Request) {
-  const prompts = await prisma.prompt.findMany({
-    orderBy: { updatedAt: "desc" },
-  });
-  return NextResponse.json(prompts);
-}
+export async function GET() {
+  try {
+    const filePath = path.join(process.cwd(), "public", "data", "prompts.json");
 
-export async function POST(req: Request) {
-  const body = await req.json();
-  const { title, content, tags } = body;
-  const created = await prisma.prompt.create({
-    data: { title, content, tags },
-  });
-  return NextResponse.json(created);
-}
+    if (!fs.existsSync(filePath)) {
+      return NextResponse.json(
+        { error: "prompts.json not found" },
+        { status: 404 }
+      );
+    }
 
-export async function PUT(req: Request) {
-  const body = await req.json();
-  const { id, title, content, tags } = body;
-  const updated = await prisma.prompt.update({
-    where: { id },
-    data: { title, content, tags },
-  });
-  return NextResponse.json(updated);
-}
+    const fileContents = fs.readFileSync(filePath, "utf8");
+    const prompts = JSON.parse(fileContents);
 
-export async function DELETE(req: Request) {
-  const url = new URL(req.url);
-  const id = url.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  await prisma.prompt.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+    return NextResponse.json(prompts, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    });
+  } catch (error) {
+    console.error("Error reading prompts:", error);
+    return NextResponse.json(
+      { error: "Failed to load prompts" },
+      { status: 500 }
+    );
+  }
 }
