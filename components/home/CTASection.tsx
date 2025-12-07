@@ -8,7 +8,7 @@ export const CTASection = () => (
         Ready to Supercharge Your AI Workflow?
       </h2>
       <p className="text-xl text-emerald-50 mb-12">
-        Join thousands of professionals using PromptHub to work smarter and
+        Join thousands of professionals using ReadyPrompt to work smarter and
         faster.
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">

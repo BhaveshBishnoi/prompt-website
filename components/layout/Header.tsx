@@ -86,7 +86,7 @@ const Header: React.FC = () => {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold bg-linear-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                PromptHub
+                ReadyPrompt
               </span>
             </Link>
           </div>

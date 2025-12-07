@@ -8,7 +8,7 @@ export const TestimonialsSection = () => {
       role: "Marketing Manager",
       company: "TechCorp",
       avatar: "SJ",
-      text: "PromptHub saved me hours every week. The SEO prompts are incredibly effective and helped us rank higher on Google.",
+      text: "ReadyPrompt saved me hours every week. The SEO prompts are incredibly effective and helped us rank higher on Google.",
       rating: 5,
     },
     {

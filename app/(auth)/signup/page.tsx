@@ -80,7 +80,11 @@ export default function SignUpPage() {
     try {
       await signIn("google", { callbackUrl: "/" });
     } catch (error) {
-      toast.error(`Failed to sign up with Google: ${error instanceof Error ? error.message : String(error)}`);
+      toast.error(
+        `Failed to sign up with Google: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
       setIsGoogleLoading(false);
     }
   };
@@ -104,7 +108,7 @@ export default function SignUpPage() {
               <Sparkles className="w-7 h-7 text-white" />
             </div>
             <span className="text-2xl font-bold bg-linear-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-              PromptHub
+              ReadyPrompt
             </span>
           </Link>
         </div>
